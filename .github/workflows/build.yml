@@ -27,7 +27,7 @@ jobs:
           if (!(Test-Path "C:\lazarus")) {
             choco install lazarus --version=2.2.6 -y
           } else {
-            Write-Host "Lazarus cache hit, skipping install"
+            Write-Host "Lazarus cache hit"
           }
 
           echo "C:\lazarus" >> $env:GITHUB_PATH
@@ -39,34 +39,44 @@ jobs:
           fpc -iV
           fpc -iTP
 
-      - name: Debug repository layout
+      - name: Build Cheat Engine GUI (x64 Release)
         shell: cmd
         run: |
-          echo === ROOT ===
-          dir
-          echo === SEARCH CheatEngine.lpi ===
-          where /R . CheatEngine.lpi
-
-      - name: Build Cheat Engine (x64 Release)
-        shell: cmd
-        run: |
+          echo Searching for CheatEngine.lpi...
           for /r %%f in (CheatEngine.lpi) do (
-            echo Found %%f
-            cd /d %%~dpf
-            lazbuild CheatEngine.lpi --build-mode=Release --os=win64 --cpu=x86_64
-            exit /b 0
+            echo Found project at %%f
+            cd /d "%%~dpfCheat Engine"
+            echo Current directory:
+            cd
+            lazbuild ..\CheatEngine.lpi ^
+              --build-mode=Release ^
+              --os=win64 ^
+              --cpu=x86_64 ^
+              --verbose
+            goto :check
           )
           echo ERROR: CheatEngine.lpi not found
           exit /b 1
+
+          :check
+          if exist "Cheat Engine.exe" (
+            echo SUCCESS: Cheat Engine.exe built
+            dir
+            exit /b 0
+          ) else (
+            echo ERROR: Cheat Engine.exe NOT FOUND
+            echo Directory contents:
+            dir
+            exit /b 1
+          )
 
       - name: Collect build artifacts
         shell: cmd
         run: |
           mkdir artifacts
-          where /R . *.exe > exes.txt
-          where /R . *.dll > dlls.txt
-          for /f "delims=" %%f in (exes.txt) do copy "%%f" artifacts\ || exit 0
-          for /f "delims=" %%f in (dlls.txt) do copy "%%f" artifacts\ || exit 0
+          copy /y "Cheat Engine.exe" artifacts\ 2>nul
+          copy /y "*.dll" artifacts\ 2>nul
+          copy /y "*.exe" artifacts\ 2>nul
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
