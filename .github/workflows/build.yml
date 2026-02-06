@@ -19,20 +19,25 @@ jobs:
 
       - name: Register Dependencies
         run: |
-          # We need to register the packages that Cheat Engine relies on
-          lazbuild "Cheat Engine/lazcontrols/lazcontrols.lpk"
-          # Add any other .lpk files here if you get more "Unit not found" errors
+          # Navigating into your specific nested folder structure
+          $root = "cheat-engine/cheat-engine/Cheat Engine"
+          
+          # Register all the required packages for Cheat Engine
+          lazbuild "$root/lazcontrols/lazcontrols.lpk"
+          lazbuild "$root/VirtualListView/virtuallistview_package.lpk"
+          lazbuild "$root/UnitTreeview/unittreeview_package.lpk"
+          lazbuild "$root/LuaEngine/Lua/lua_package.lpk"
 
       - name: Build Cheat Engine (64-bit)
         run: |
-          cd "Cheat Engine"
-          # Use --primary-config-path to ensure it stores package info correctly
-          lazbuild --os=win64 --cpu=x86_64 --build-mode=Release --primary-config-path=. cheatengine.lpi
+          # Building the main project
+          $projectPath = "cheat-engine/cheat-engine/Cheat Engine/cheatengine.lpi"
+          lazbuild --os=win64 --cpu=x86_64 --build-mode=Release --primary-config-path=. "$projectPath"
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Cheat-Engine-Win64
+          name: Cheat-Engine-Sylixa-Build
           path: |
-            Cheat Engine/bin/*.exe
-            Cheat Engine/bin/*.dll
+            cheat-engine/cheat-engine/Cheat Engine/bin/*.exe
+            cheat-engine/cheat-engine/Cheat Engine/bin/*.dll
