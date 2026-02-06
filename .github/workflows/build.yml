@@ -15,9 +15,21 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install Lazarus + FPC
+      - name: Cache Lazarus
+        uses: actions/cache@v4
+        with:
+          path: C:\lazarus
+          key: lazarus-2.2.6-fpc-3.2.2
+
+      - name: Install Lazarus + FPC (if not cached)
+        shell: pwsh
         run: |
-          choco install lazarus --version=2.2.6 -y
+          if (!(Test-Path "C:\lazarus")) {
+            choco install lazarus --version=2.2.6 -y
+          } else {
+            Write-Host "Lazarus cache hit, skipping install"
+          }
+
           echo "C:\lazarus" >> $env:GITHUB_PATH
           echo "C:\lazarus\fpc\3.2.2\bin\x86_64-win64" >> $env:GITHUB_PATH
 
@@ -28,6 +40,7 @@ jobs:
           fpc -iTP
 
       - name: Debug repository layout
+        shell: cmd
         run: |
           echo === ROOT ===
           dir
@@ -47,6 +60,7 @@ jobs:
           exit /b 1
 
       - name: Collect build artifacts
+        shell: cmd
         run: |
           mkdir artifacts
           where /R . *.exe > exes.txt
