@@ -45,10 +45,7 @@ jobs:
           echo Searching for CheatEngine.lpi...
           for /r %%f in (CheatEngine.lpi) do (
             echo Found project at %%f
-            cd /d "%%~dpfCheat Engine"
-            echo Current directory:
-            cd
-            lazbuild ..\CheatEngine.lpi ^
+            lazbuild "%%f" ^
               --build-mode=Release ^
               --os=win64 ^
               --cpu=x86_64 ^
@@ -59,14 +56,14 @@ jobs:
           exit /b 1
 
           :check
-          if exist "Cheat Engine.exe" (
+          if exist "Cheat Engine\Cheat Engine.exe" (
             echo SUCCESS: Cheat Engine.exe built
-            dir
+            dir "Cheat Engine"
             exit /b 0
           ) else (
             echo ERROR: Cheat Engine.exe NOT FOUND
             echo Directory contents:
-            dir
+            dir "Cheat Engine"
             exit /b 1
           )
 
@@ -74,9 +71,9 @@ jobs:
         shell: cmd
         run: |
           mkdir artifacts
-          copy /y "Cheat Engine.exe" artifacts\ 2>nul
-          copy /y "*.dll" artifacts\ 2>nul
-          copy /y "*.exe" artifacts\ 2>nul
+          copy /y "Cheat Engine\Cheat Engine.exe" artifacts\ 2>nul
+          copy /y "Cheat Engine\*.dll" artifacts\ 2>nul
+          copy /y "Cheat Engine\lua.exe" artifacts\ 2>nul
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
