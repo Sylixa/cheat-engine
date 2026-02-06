@@ -21,27 +21,38 @@ jobs:
           echo "C:\lazarus" >> $env:GITHUB_PATH
           echo "C:\lazarus\fpc\3.2.2\bin\x86_64-win64" >> $env:GITHUB_PATH
 
-      - name: Verify Lazarus
+      - name: Verify Lazarus / FPC
         run: |
           lazbuild --version
-          fpc -iTP
           fpc -iV
+          fpc -iTP
+
+      - name: Debug repository layout
+        run: |
+          echo === ROOT ===
+          dir
+          echo === SEARCH CheatEngine.lpi ===
+          where /R . CheatEngine.lpi
 
       - name: Build Cheat Engine (x64 Release)
         shell: cmd
         run: |
-          cd "cheat-engine/cheat-engine/Cheat Engine"
-          lazbuild cheatengine.lpi ^
-            --build-mode=Release ^
-            --os=win64 ^
-            --cpu=x86_64
+          for /r %%f in (CheatEngine.lpi) do (
+            echo Found %%f
+            cd /d %%~dpf
+            lazbuild CheatEngine.lpi --build-mode=Release --os=win64 --cpu=x86_64
+            exit /b 0
+          )
+          echo ERROR: CheatEngine.lpi not found
+          exit /b 1
 
-      - name: Collect artifacts
+      - name: Collect build artifacts
         run: |
           mkdir artifacts
-          copy "cheat-engine\cheat-engine\Cheat Engine\*.exe" artifacts\ || exit 0
-          copy "cheat-engine\cheat-engine\Cheat Engine\bin\*.exe" artifacts\ || exit 0
-          copy "cheat-engine\cheat-engine\Cheat Engine\bin\*.dll" artifacts\ || exit 0
+          where /R . *.exe > exes.txt
+          where /R . *.dll > dlls.txt
+          for /f "delims=" %%f in (exes.txt) do copy "%%f" artifacts\ || exit 0
+          for /f "delims=" %%f in (dlls.txt) do copy "%%f" artifacts\ || exit 0
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
