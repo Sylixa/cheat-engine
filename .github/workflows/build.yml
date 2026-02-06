@@ -1,7 +1,8 @@
-name: Build Cheat Engine
+name: Build Cheat Engine (Windows)
 
 on:
   push:
+    branches: [ master ]
   pull_request:
   workflow_dispatch:
 
@@ -10,53 +11,29 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout source
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Install Lazarus
+      - name: Setup Lazarus (known-good)
         uses: gcarreno/setup-lazarus@v3
         with:
-          lazarus-version: 'stable'
-          with-higher-fpc: true
+          lazarus-version: "2.2.2"
 
-      - name: Register Dependencies
-        shell: pwsh
+      - name: Build Cheat Engine (64-bit)
+        shell: cmd
         run: |
-          # We go deep into the directory where the packages actually live
-          $root = "cheat-engine/Cheat Engine"
-          lazbuild "$root/lazcontrols/lazcontrols.lpk"
-          lazbuild "$root/VirtualListView/virtuallistview_package.lpk"
-          lazbuild "$root/UnitTreeview/unittreeview_package.lpk"
-          lazbuild "$root/LuaEngine/Lua/lua_package.lpk"
+          lazbuild "Cheat Engine\cheatengine.lpi" --build-mode="Release 64-Bit"
 
-      - name: Build Cheat Engine (x64 Release)
-        shell: pwsh
+      - name: Verify output
+        shell: cmd
         run: |
-          # Move to the directory containing the project file
-          cd "cheat-engine/Cheat Engine"
-          
-          # Build the main project
-          lazbuild cheatengine.lpi --build-mode=Release --os=win64 --cpu=x86_64 --primary-config-path=../lazarus-config
+          dir "Cheat Engine\bin"
+          if not exist "Cheat Engine\bin\cheatengine-x86_64.exe" exit /b 1
 
-      - name: Collect Build Artifacts
-        shell: pwsh
-        run: |
-          mkdir final_artifacts
-          # The binaries are produced in the 'bin' folder under Cheat Engine
-          $binPath = "cheat-engine/Cheat Engine/bin"
-          
-          if (Test-Path "$binPath/cheatengine-x86_64.exe") {
-              Copy-Item "$binPath/*" -Destination "final_artifacts" -Recurse
-              Write-Host "Success: Artifacts collected."
-          } else {
-              Write-Error "Error: Main EXE was not found in $binPath"
-              exit 1
-          }
-
-      - name: Upload Build
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: CheatEngine-Binaries
-          path: final_artifacts/
+          name: CheatEngine-Windows-x64
+          path: Cheat Engine/bin
